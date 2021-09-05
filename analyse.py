@@ -1,5 +1,6 @@
 import fetch_quipuswap
 import fetch_plenty
+import fetch_token_name
 
 
 def price(x, y, a):
@@ -34,12 +35,9 @@ def analyse():
 
     print("Max $PLENTY amount", max_amount_plenty/10000000000000)
 
-    # print(
-    #     'XTZ at the end:',
-    #      (max_amount_plenty *
-    #       quipuswap_data['KT1GRSvLoikDsXujKgZPsGLX8k8VvR2Tq95b']['tez_amount'])
-    #     / (quipuswap_data['KT1GRSvLoikDsXujKgZPsGLX8k8VvR2Tq95b']['token_amount']+max_amount_plenty))
-    print('Path: XTZ ->', best_path, ' -> PLENTY -> XTZ', '\n')
+    symbol_best_path = fetch_token_name.get_token_name(
+        best_path[0], best_path[1])
+    print('Path: XTZ ->', symbol_best_path, '-> PLENTY -> XTZ', '\n')
 
 
 if __name__ == "__main__":
