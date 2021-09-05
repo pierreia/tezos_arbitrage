@@ -3,8 +3,8 @@ import fetch_plenty
 import fetch_token_name
 
 
-def price(x, y, a):
-    return ((x+0.997*a)/(0.997*y))
+def price(x, y, a, fee):
+    return ((x+(1-fee)*a)/((1-fee)*y))
 
 
 def analyse():
@@ -25,10 +25,10 @@ def analyse():
 
     for (token_address, token_id) in intersection:
         amount_received = price(quipuswap_data[(token_address, token_id)]['token_amount'],
-                                quipuswap_data[(token_address, token_id)]['tez_amount'], a) * a
+                                quipuswap_data[(token_address, token_id)]['tez_amount'], a, 0.003) * a
         amount_plenty = price(
             plenty_data[(token_address, token_id)]['plenty_amount'],
-            plenty_data[(token_address, token_id)]['token_amount'], amount_received) * amount_received
+            plenty_data[(token_address, token_id)]['token_amount'], amount_received, 0.0035) * amount_received
         max_amount_plenty = max(max_amount_plenty, amount_plenty)
         if amount_plenty == max_amount_plenty:
             best_path = (token_address, token_id)
