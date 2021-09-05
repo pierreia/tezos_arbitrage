@@ -22,9 +22,10 @@ def fetch():
             contract = pytezos.using('mainnet').contract(contract_address)
             storage = contract.storage()
             token_address = storage['token2Address']
+            token_id = storage['token2Id']
             token_amount = storage['token2_pool']
             plenty_amount = storage['token1_pool']
-            tokens_info[str(token_address)] = {
+            tokens_info[(str(token_address), token_id)] = {
                 'token_amount': token_amount, 'plenty_amount': plenty_amount}
         except:
             print("Error while fetching data for contract", contract_address)
