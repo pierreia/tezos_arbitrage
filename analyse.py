@@ -25,7 +25,7 @@ def analyse():
 
     for (token_address, token_id) in intersection:
         amount_received = price(quipuswap_data[(token_address, token_id)]['token_amount'],
-                                quipuswap_data[(token_address, token_id)]['tez_amount'], a, 0.003) * a
+                                quipuswap_data[(token_address, token_id)]['xtz_amount'], a, 0.003) * a
         amount_plenty = price(
             plenty_data[(token_address, token_id)]['plenty_amount'],
             plenty_data[(token_address, token_id)]['token_amount'], amount_received, 0.0035) * amount_received
@@ -34,7 +34,7 @@ def analyse():
             best_path = (token_address, token_id)
 
     print("Max $PLENTY amount", max_amount_plenty/10000000000000)
-
+    print(best_path[0],best_path[1])
     symbol_best_path = fetch_token_name.get_token_name(
         best_path[0], best_path[1])
     print('Path: XTZ ->', symbol_best_path, '-> PLENTY -> XTZ', '\n')

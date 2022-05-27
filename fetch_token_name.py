@@ -1,8 +1,9 @@
 import requests
 
 
-def get_token_name(address, id):
+def get_token_name(address, token_id):
+    payload = {'contract': address, 'tokenId': token_id}
     r = requests.get(
-        'https://api.better-call.dev/v1/contract/mainnet/{}/tokens'.format(address))
+        'https://api.tzkt.io/v1/tokens/', params=payload)
     res = r.json()
-    return (res[int(id)]['symbol'])
+    return (res[0]['metadata']['symbol'])
