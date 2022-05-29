@@ -37,6 +37,8 @@ def fetch():
         try:
             contract = pytezos.using('mainnet').contract(contract_address)
             storage = contract.storage()
+            if storage['token1Address'] != 'KT1GRSvLoikDsXujKgZPsGLX8k8VvR2Tq95b':
+                continue
             token_address = storage['token2Address']
             print(token_address)
             token_id = storage['token2Id']

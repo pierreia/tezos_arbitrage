@@ -5,42 +5,13 @@ import fetch_vortex
 import numpy as np
 
 #from tezos_arbitrage import fetch_quipuswap, fetch_plenty, fetch_token_name, fetch_vortex
+import numpy as np
 
 def price(x, y, a, fee):
     return ((1-fee)*y*a/(x+(1-fee)*a))
 
+MUTEZ = 10e6
 
-def analyse():
-    quipuswap_data = fetch_quipuswap.fetch()
-    plenty_data = fetch_plenty.fetch()
-    print("\nData fetched ! \U0001F389\n")
-
-    quipuswap_tokens = quipuswap_data.keys()
-    plenty_tokens = plenty_data.keys()
-
-    # intersection = list(set(quipuswap_tokens) & set(plenty_tokens))
-
-    intersection = [x for x in quipuswap_tokens if x in plenty_tokens]
-
-    max_amount_plenty = 0
-    best_path = intersection[0]
-    a = 10
-
-    for (token_address, token_id) in intersection:
-        amount_received = price(quipuswap_data[(token_address, token_id)]['token_amount'],
-                                quipuswap_data[(token_address, token_id)]['xtz_amount'], a, 0.003) * a
-        amount_plenty = price(
-            plenty_data[(token_address, token_id)]['plenty_amount'],
-            plenty_data[(token_address, token_id)]['token_amount'], amount_received, 0.0035) * amount_received
-        max_amount_plenty = max(max_amount_plenty, amount_plenty)
-        if amount_plenty == max_amount_plenty:
-            best_path = (token_address, token_id)
-
-    print("Max $PLENTY amount", max_amount_plenty/10000000000000)
-    print(best_path[0],best_path[1])
-    symbol_best_path = fetch_token_name.get_token_name(
-        best_path[0], best_path[1])
-    print('Path: XTZ ->', symbol_best_path, '-> PLENTY -> XTZ', '\n')
 
 
 def fetch_tokens():
@@ -56,7 +27,7 @@ def fetch_tokens():
 
 quipuswap_data, plenty_data, vortex_data = fetch_tokens()
 
-def analyse2(quipuswap_data,plenty_data,vortex_data):
+def analyse2(quipuswap_data,plenty_data,vortex_data, tez_amount):
     print("Starting arbitrage...")
 
     quipuswap_tokens = quipuswap_data.keys()
@@ -72,17 +43,26 @@ def analyse2(quipuswap_data,plenty_data,vortex_data):
 
     print("Common pools: ", len(intersection))
 
-    max_tez_amount = 0
-    best_path = intersection[0]
-    tez_amount = 0.5
+    print("Fetching decimals...")
+    decimals = {}
+
+    for token in intersection:
+        decimals[token] = fetch_token_name.get_decimals(*token)
+        print(token, decimals[token])
+    print("Total decimals feetched: ", len(decimals))
+
+    print("Decimals fetched")
+
+
 
     for (token_address, token_id) in intersection:
+        token = (token_address, token_id)
         print("Trying: ", (token_address, token_id))
         #SWAP 1
-        amount_quipu = price(float(quipuswap_data[(token_address, token_id)]['xtz_amount']),
-                                float(quipuswap_data[(token_address, token_id)]['token_amount']), tez_amount, 0.003)
+        amount_quipu = price(quipuswap_data[(token_address, token_id)]['xtz_amount']/10e6,
+                                quipuswap_data[(token_address, token_id)]['token_amount']/(10**(decimals[token]+1)), tez_amount, 0.003)
         amount_vortex = price(float(vortex_data[(token_address, token_id)]['xtz_amount']),
-                                float(vortex_data[(token_address, token_id)]['token_amount']), tez_amount, 0.0028)
+                                float(vortex_data[(token_address, token_id)]['token_amount'])/(10**(decimals[token])), tez_amount, 0.0028)
 
         first_ex_id = np.argmax([amount_quipu, amount_vortex])
         first_ex = exchanges[first_ex_id]
@@ -93,25 +73,30 @@ def analyse2(quipuswap_data,plenty_data,vortex_data):
 
         #SWAP 2
         plenty_amount = price(
-            plenty_data[(token_address, token_id)]['token_amount'],
-            plenty_data[(token_address, token_id)]['plenty_amount'], tokenA_amount, 0.0035)
+            plenty_data[(token_address, token_id)]['token_amount']/(10**decimals[(tokenA, tokenAId)]),
+            plenty_data[(token_address, token_id)]['plenty_amount']/10e18, tokenA_amount, 0.0035)
 
         #SWAP 3
         for (token_address2, token_id2) in intersection:
+            token2 = (token_address2, token_id2)
             tokenB_amount = price(
-                plenty_data[(token_address2, token_id2)]['plenty_amount'],
-                plenty_data[(token_address2, token_id2)]['token_amount'], plenty_amount, 0.0035)
+                plenty_data[(token_address2, token_id2)]['plenty_amount']/10e18,
+                plenty_data[(token_address2, token_id2)]['token_amount']/(10**(decimals[token2])), plenty_amount, 0.0035)
 
             tokenB = token_address2
             tokenBId = token_id2
-            final_amount_quipu = price(float(quipuswap_data[(token_address2, token_id2)]['token_amount']),
-                                 float(quipuswap_data[(token_address2, token_id2)]['xtz_amount']), tez_amount, 0.003)
-            final_amount_vortex = price(float(vortex_data[(token_address2, token_id2)]['token_amount']),
-                                  float(vortex_data[(token_address2, token_id2)]['xtz_amount']), tez_amount, 0.0028)
+            final_amount_quipu = price(quipuswap_data[(token_address2, token_id2)]['token_amount']/(10**(decimals[token2]+1)),
+                                 quipuswap_data[(token_address2, token_id2)]['xtz_amount']/10e6, tokenB_amount, 0.003)
+            final_amount_vortex = price(float(vortex_data[(token_address2, token_id2)]['token_amount'])/(10**(decimals[token2])),
+                                  float(vortex_data[(token_address2, token_id2)]['xtz_amount']), tokenB_amount, 0.0028)
 
             tokenA_name = fetch_token_name.get_token_name(tokenA, tokenAId)
             tokenB_name = fetch_token_name.get_token_name(tokenB, tokenBId)
-            if max(final_amount_vortex, final_amount_quipu) > tez_amount:
+
+            final_tez_amount = (max(final_amount_vortex, final_amount_quipu))
+
+            if final_tez_amount > tez_amount:
+            #if True:
                 second_ex_id = np.argmax([final_amount_quipu, final_amount_vortex])
                 second_ex = exchanges[second_ex_id]
                 print('Opportunity found: XTZ -> {} on {}, {} -> PLENTY -> {} on PLENTY, {} -> XTZ on {}'.format(
@@ -120,10 +105,16 @@ def analyse2(quipuswap_data,plenty_data,vortex_data):
                 print('{} amount: {}'.format(tokenA_name, tokenA_amount))
                 print('{} amount: {}'.format('PLENTY', plenty_amount))
                 print('{} amount: {}'.format(tokenB_name, tokenB_amount))
-                print('Final amount: {}'.format(max(final_amount_vortex, final_amount_quipu)))
+                print('Final amount: {}'.format(final_tez_amount))
 
 
-analyse2(quipuswap_data,plenty_data,vortex_data)
+#analyse2(quipuswap_data,plenty_data,vortex_data)
 
 if __name__ == "__main__":
-    analyse()
+    import argparse
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument("tezos_amount", help="Initial Tezos Amount",
+                        type=float)
+    args = parser.parse_args()
+    analyse2(quipuswap_data,plenty_data,vortex_data, args.tezos_amount)
