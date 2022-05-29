@@ -1,11 +1,18 @@
 # Arbitrage between AMM on Tezos
 
+Triangular between Vortex, Quipuswap and Plenty
+
 ###### Usage
 
 Scan for opportunities :
 
 ```
-$ python3 ./analyse.py
+$ python3 ./analyse.py $tezos_amount
+```
+
+ex to scan opportunities when using 0.5 tez at the beginning: 
+```
+$ python3 ./analyse.py 0.5
 ```
 
 ###### Dependancies 
